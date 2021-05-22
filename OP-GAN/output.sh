@@ -9,6 +9,5 @@ then
 else
       echo "Starting training on GPU ${GPU}."
 fi
-python -u code/main.py --cfg code/cfg/cfg_file_eval.yml
+python -u code/main.py --cfg code/cfg/cfg_file_output.yml
 echo "Done."
-$SHELL

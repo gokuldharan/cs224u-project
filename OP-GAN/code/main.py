@@ -3,7 +3,7 @@ from __future__ import print_function
 import logging
 
 from miscc.config import cfg, cfg_from_file
-from datasets import TextDataset
+from datasets import TextDataset, TextOnlyDataset
 from miscc.utils import initialize_logging, mkdir_p
 from trainer import condGANTrainer as trainer
 
@@ -139,7 +139,17 @@ if __name__ == "__main__":
             dataloaders.append(dataloader)
 
         algo = trainer(output_dir, dataloaders, dataset.n_words, dataset.ixtoword, resume)
+    elif cfg.TRAIN.OUTPUT_ONLY:
+        dataset = TextOnlyDataset(cfg.DATA_DIR, img_dir, split_dir, base_size=cfg.TREE.BASE_SIZE,
+                              transform=image_transform, eval=eval, use_generated_bboxes=cfg.TRAIN.GENERATED_BBOXES)
+        assert dataset
+        dataset_to_load = (
+            torch.utils.data.Subset(dataset, list(range(cfg.DEBUG_NUM_DATAPOINTS))) if cfg.DEBUG else dataset
+        )
+        dataloader = torch.utils.data.DataLoader(dataset_to_load, batch_size=cfg.TRAIN.BATCH_SIZE[0],
+                                                 drop_last=True, shuffle=bshuffle, num_workers=int(cfg.WORKERS))
 
+        algo = trainer(output_dir, dataloader, dataset.n_words, dataset.ixtoword, resume)
     else:
         dataset = TextDataset(cfg.DATA_DIR, img_dir, split_dir, base_size=cfg.TREE.BASE_SIZE,
                               transform=image_transform, eval=eval, use_generated_bboxes=cfg.TRAIN.GENERATED_BBOXES)
@@ -166,6 +176,13 @@ if __name__ == "__main__":
         algo.train()
         end_t = time.time()
         logger.info('Total time for training: %s', end_t - start_t)
+    elif cfg.TRAIN.OUTPUT_ONLY:
+        '''generate images from pre-extracted embeddings'''
+        assert not cfg.TRAIN.OPTIMIZE_DATA_LOADING, "\"cfg.TRAIN.OPTIMIZE_DATA_LOADING\" " \
+                                                    "not valid for sampling since we use" \
+                                                    "generated bounding boxes at test time."
+        use_generated_bboxes = cfg.TRAIN.GENERATED_BBOXES
+        algo.sampling(split_dir, num_samples=500)  # generate images
     else:
         '''generate images from pre-extracted embeddings'''
         assert not cfg.TRAIN.OPTIMIZE_DATA_LOADING, "\"cfg.TRAIN.OPTIMIZE_DATA_LOADING\" " \
