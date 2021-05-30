@@ -29,6 +29,14 @@ pip install -r requirements.txt
 # (5) Retrieve external data. (Our data is already in subfolders of data/; this is for
 # larger blobs like GloVe.) This script also makes some directories we'll need.
 ./scripts/get_data.sh
+
+# (6) Download MSCOCO to data/mscoco by running the following wget commands
+wget http://images.cocodataset.org/annotations/annotations_trainval2014.zip
+wget http://images.cocodataset.org/zips/val2014.zip
+wget http://images.cocodataset.org/zips/train2014.zip
+
+Then unzip the downloaded files and move the train and val images into one 
+directory called images. So the path to images should be data/mscoco/images
 ```
 
 ## Run
