@@ -35,8 +35,9 @@ wget http://images.cocodataset.org/annotations/annotations_trainval2014.zip
 wget http://images.cocodataset.org/zips/val2014.zip
 wget http://images.cocodataset.org/zips/train2014.zip
 
-Then unzip the downloaded files and move the train and val images into one 
-directory called images. So the path to images should be data/mscoco/images
+
+# Then unzip the downloaded files and move the train and val images into one 
+# directory called images. So the path to images should be data/mscoco/images
 ```
 
 ## Run
