@@ -1,5 +1,6 @@
 SOA/output/*
 SOA/yolov3.weights
+output/op-gan/valid/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

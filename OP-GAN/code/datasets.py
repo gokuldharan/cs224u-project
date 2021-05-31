@@ -404,42 +404,68 @@ class TextOnlyDataset(data.Dataset):
 
         self.data = []
         self.data_dir = data_dir
-        self.bbox = self.load_bbox()
-        self.labels = self.load_labels()
+        
         self.split_dir = os.path.join(data_dir, split)
         self.max_objects = 3
-        if cfg.TRAIN.OPTIMIZE_DATA_LOADING or self.use_generated_bboxes:
-            self.max_objects = 10
+        #if cfg.TRAIN.OPTIMIZE_DATA_LOADING or self.use_generated_bboxes:
+        #    self.max_objects = 10
 
         self.filenames, self.captions, self.ixtoword, \
             self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
 
+        self.bbox = self.load_bbox()
+        self.labels = self.load_labels()
+
         self.class_id = self.load_class_id(self.split_dir, len(self.filenames))
         self.number_example = len(self.filenames)
 
+
     def load_bbox(self):
-        bbox_path = os.path.join(self.split_dir, 'bboxes.pickle')
-        if self.use_generated_bboxes:
-            bbox_path = os.path.join(self.split_dir, 'bboxes_generated.pickle')
-        elif cfg.TRAIN.OPTIMIZE_DATA_LOADING:
-            bbox_path = os.path.join(self.split_dir, 'bboxes_large.pickle')
+        bbox_path = os.path.join(self.data_dir, 'bboxes.npy')
         with open(bbox_path, "rb") as f:
-            bboxes = pickle.load(f, encoding='latin1')
-            bboxes = np.array(bboxes)
+            bboxes = np.load(f).astype('float32')
+            #bboxes = np.array(bboxes)
         logger.info("Load bounding boxes: %s", bboxes.shape)
         return bboxes
 
     def load_labels(self):
-        label_path = os.path.join(self.split_dir, 'labels.pickle')
-        if self.use_generated_bboxes:
-            label_path = os.path.join(self.split_dir, 'labels_generated.pickle')
-        elif cfg.TRAIN.OPTIMIZE_DATA_LOADING:
-            label_path = os.path.join(self.split_dir, 'labels_large.pickle')
+        label_path = os.path.join(self.data_dir, 'labels_transformed.npy')
         with open(label_path, "rb") as f:
-            labels = pickle.load(f, encoding='latin1')
-            labels = np.array(labels)
+            labels = np.load(f)
+            #labels = pickle.load(f)
+            #labels = np.array(labels)
         logger.info("Load Labels: %s", labels.shape)
         return labels
+
+    def load_all_captions_from_file(self, data_dir, filename):
+        all_captions = []
+        with open( os.path.join(data_dir, filename), "r") as f:
+            captions = f.read().split('\n')
+            cnt = 0
+            for cap in captions:
+                if len(cap) == 0:
+                    continue
+                cap = cap.replace("\ufffd\ufffd", " ")
+                # picks out sequences of alphanumeric characters as tokens
+                # and drops everything else
+                tokenizer = RegexpTokenizer(r'\w+')
+                tokens = tokenizer.tokenize(cap.lower())
+                # logger.info('tokens: %s', tokens)
+                if len(tokens) == 0:
+                    logger.info('cap: %s', cap)
+                    continue
+
+                tokens_new = []
+                for t in tokens:
+                    t = t.encode('ascii', 'ignore').decode('ascii')
+                    if len(t) > 0:
+                        tokens_new.append(t)
+                all_captions.append(tokens_new)
+                cnt += 1
+            if cnt < self.embeddings_num:
+                logger.error('ERROR: the captions for %s less than %d'
+                        % (filenames[i], cnt))
+        return all_captions
 
     def load_captions(self, data_dir, filenames):
         all_captions = []
@@ -515,6 +541,21 @@ class TextOnlyDataset(data.Dataset):
         return [train_captions_new, test_captions_new,
                 ixtoword, wordtoix, len(ixtoword)]
 
+    def map_to_dictionary(self, captions, wordtoix):
+        missed_cnt = 0
+        captions_new = []
+        for t in captions:
+            rev = []
+            for w in t:
+                if w in wordtoix:
+                    rev.append(wordtoix[w])
+                else:
+                    missed_cnt += 1
+            # rev.append(0)  # do not need '<end>' token
+            captions_new.append(rev)
+        logger.info('Missed %d words in mapping', missed_cnt)
+        return captions_new
+
     def load_text_data(self, data_dir, split):
         filepath = os.path.join(data_dir, 'captions.pickle')
         train_names = self.load_filenames(data_dir, 'train')
@@ -537,14 +578,11 @@ class TextOnlyDataset(data.Dataset):
                 del x
                 n_words = len(ixtoword)
                 logger.info('Load captions from: %s', filepath)
-        if split == 'train':
-            # a list of list: each list contains
-            # the indices of words in a sentence
-            captions = train_captions
-            filenames = train_names
-        else:  # split=='test'
-            captions = test_captions
-            filenames = test_names
+
+        str_captions = self.load_all_captions_from_file(data_dir, "sentences.txt")
+        captions = self.map_to_dictionary(str_captions, wordtoix)
+        filenames = list(range(len(str_captions)))
+
         logger.info("Captions: %s", len(captions))
         return filenames, captions, ixtoword, wordtoix, n_words
 
@@ -608,15 +646,10 @@ class TextOnlyDataset(data.Dataset):
 
     def __getitem__(self, index):
         #
-        key = self.filenames[index]
+        key = str(self.filenames[index])
         cls_id = self.class_id[index]
         #
-        if self.bbox is not None:
-            if self.use_generated_bboxes:
-                rand_num = np.random.randint(0, 5, 1)
-                bbox = self.bbox[index, rand_num].squeeze()
-            else:
-                bbox = self.bbox[index]
+        bbox = self.bbox[index]
 
         img_name = "data/test/blank.jpg"
         imgs, bbox_scaled = get_imgs(img_name, self.imsize, self.max_objects,
@@ -625,10 +658,7 @@ class TextOnlyDataset(data.Dataset):
         transformation_matrices = self.get_transformation_matrices(bbox_scaled)
 
         # load label
-        if self.use_generated_bboxes:
-            label = np.expand_dims(self.labels[index, rand_num].squeeze(), 1)
-        else:
-            label = self.labels[index]
+        label = np.expand_dims(self.labels[index], 1)
 
         label = self.get_one_hot_labels(label)
 

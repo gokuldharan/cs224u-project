@@ -536,11 +536,10 @@ class condGANTrainer(object):
                     im = np.transpose(im, (1, 2, 0))
                     im = Image.fromarray(im)
                     fullpath = '%s_s%d.png' % (s_tmp, step*batch_size+batch_idx)
-                    print(fullpath)
                     im.save(fullpath)
 
 
-    def genOutputs(self, split_dir, num_samples=30000):
+    def genOutputs(self, split_dir, num_samples=57140):
         if cfg.TRAIN.NET_G == '':
             logger.error('Error: the path for morels is not found!')
         else:
@@ -555,7 +554,7 @@ class condGANTrainer(object):
             netG.to(cfg.DEVICE)
             netG.eval()
             #
-            text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
+            text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM) ###HACK
             state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             text_encoder = text_encoder.to(cfg.DEVICE)
@@ -570,7 +569,7 @@ class condGANTrainer(object):
             model_dir = cfg.TRAIN.NET_G
             state_dict = torch.load(model_dir, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict["netG"])
-            max_objects = 10
+            max_objects = 3
             logger.info('Load G from: %s', model_dir)
 
             # the path to save generated images
@@ -588,7 +587,7 @@ class condGANTrainer(object):
             for step in tqdm(range(number_batches)):
                 data = data_iter.next()
 
-                captions, cap_lens, class_ids, keys, transformation_matrices, label_one_hot = prepare_data(
+                imgs, captions, cap_lens, class_ids, keys, transformation_matrices, label_one_hot, _ = prepare_data(
                     data, eval=True)
 
                 transf_matrices = transformation_matrices[0]
@@ -628,5 +627,5 @@ class condGANTrainer(object):
                     im = im.astype(np.uint8)
                     im = np.transpose(im, (1, 2, 0))
                     im = Image.fromarray(im)
-                    fullpath = '%s_s%d.png' % (s_tmp, step*batch_size+batch_idx)
+                    fullpath = '%s.png' % (s_tmp)
                     im.save(fullpath)
