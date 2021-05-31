@@ -51,6 +51,11 @@ python -m pc.get_clip_embeddings
 # Run MLP training experiments with clip embeddings
 python -m pc.clip_experiments
 
+# Finetune clip model (still need to run get clip embeddings before this)
+python -m pc.finetune_clip --task "situated-OP"
+python -m pc.finetune_clip --task "situated-OA"
+python -m pc.finetune_clip --task "situated-AP" --epochs 1
+
 # Run the baselines: random and majority.
 python -m pc.baselines
 
