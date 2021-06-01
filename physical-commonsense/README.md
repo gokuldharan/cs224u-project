@@ -51,6 +51,11 @@ python -m pc.get_clip_embeddings
 # Run MLP training experiments with clip embeddings
 python -m pc.clip_experiments
 
+# Finetune clip model with text only
+python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 15
+python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 15
+python -m pc.finetune_clip --text-only --task "situated-AP" --epochs 6
+
 # Finetune clip model with mscoco images (still need to run get clip embeddings before this)
 python -m pc.finetune_clip --task "situated-OP" --epochs 15
 python -m pc.finetune_clip --task "situated-OA" --epochs 15
