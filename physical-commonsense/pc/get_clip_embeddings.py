@@ -19,8 +19,8 @@ def get_situated_clip_full_emb():
     sent_feats = get_situated_clip_text_emb()
     imgid2file = id_to_file_map()
 
-    prop_img_feats = get_image_feats("data/pc/situated-properties.csv", imgid2file, "data/clip/prop_img_feats.npz")
-    aff_img_feats = get_image_feats("data/pc/situated-affordances-sampled.csv", imgid2file, "data/clip/aff_img_feats.npz")
+    prop_img_feats, prop_image_names = get_image_feats("data/pc/situated-properties.csv", imgid2file, "data/clip/prop_img_feats.npz")
+    aff_img_feats, aff_image_names = get_image_feats("data/pc/situated-affordances-sampled.csv", imgid2file, "data/clip/aff_img_feats.npz")
 
     #sent_feats = np.load("data/clip/sentences.clip_text.npz")["matrix"]
     #imgid2file = pkl.load(open("data/mscoco/mscoco_id_to_file.pkl", "rb"))
@@ -29,17 +29,20 @@ def get_situated_clip_full_emb():
     #aff_img_feats = np.load("data/clip/aff_img_feats.npz")["matrix"]
 
     label_to_idx = {}
-    merge_prop_img_sent_feats(prop_img_feats, sent_feats, label_to_idx)
-    merge_aff_img_sent_feats(aff_img_feats, sent_feats, label_to_idx)
-    merge_aff_prop_img_sent_feats(aff_img_feats, sent_feats, label_to_idx)
+    idx_to_image = {}
+    merge_prop_img_sent_feats(prop_img_feats, sent_feats, prop_image_names, label_to_idx, idx_to_image)
+    merge_aff_img_sent_feats(aff_img_feats, sent_feats, aff_image_names, label_to_idx, idx_to_image)
+    merge_aff_prop_img_sent_feats(aff_img_feats, sent_feats, aff_image_names, label_to_idx, idx_to_image)
 
     pkl.dump(label_to_idx, open("data/clip/labels_to_idx.pkl", "wb"))
+    pkl.dump(idx_to_image, open("data/clip/idx_to_image.pkl", "wb"))
     
 
 def get_situated_clip_text_emb(batch_size=64):
     print("Getting sentence embeddings")
     sents = open("data/sentences/sentences.txt", "r").readlines()
     tokenized_sents = clip.tokenize(sents).to(device)
+    print(tokenized_sents[0])
 
     sent_features = []
     with torch.no_grad():
@@ -77,11 +80,13 @@ def id_to_file_map():
 def get_image_feats(csv_path, imgid2file, save_name):
     print(f"Getting image features for images in {csv_path}")
     df = pd.read_csv(csv_path, index_col="objectUID")
+    Gimage_names = []
     image_features = []
 
     for _, row in tqdm(df.iterrows()):
         image_id = row["cocoImgID"]
         filename = imgid2file[image_id]
+        image_names.append(filename)
         image = preprocess(Image.open(f"data/mscoco/images/{filename}")).unsqueeze(0).to(device)
 
         with torch.no_grad():
@@ -90,9 +95,9 @@ def get_image_feats(csv_path, imgid2file, save_name):
 
     np.savez(save_name, matrix=image_features)
 
-    return image_features
+    return image_features, image_names
 
-def merge_prop_img_sent_feats(image_feats, sent_feats, label_to_idx):
+def merge_prop_img_sent_feats(image_feats, sent_feats, image_names, label_to_idx, idx_to_image):
     print("Mergeing image and sent feats for object property")
     # Need to get subset of sentence indices that map to each image
     label_df = pd.read_csv("data/pc/situated-properties.csv", index_col="objectUID").drop(
@@ -118,11 +123,16 @@ def merge_prop_img_sent_feats(image_feats, sent_feats, label_to_idx):
     for label_idx, label in enumerate(labels):
         label_to_idx[Task.Situated_ObjectsProperties][label] = label_idx
 
+    idx_to_image[Task.Situated_ObjectsProperties] = {}
+
+    for i in range(len(labels)):
+        idx_to_image[Task.Situated_ObjectsProperties][sent_idxs[i]] = image_names[image_idxs[i]]
+
     print("Saving file")
     np.savez("data/clip/sentences.clip_obj_prop_full.npz", matrix=full_feats)
 
 
-def merge_aff_img_sent_feats(image_feats, sent_feats, label_to_idx):
+def merge_aff_img_sent_feats(image_feats, sent_feats, image_names, label_to_idx, idx_to_image):
     print("Mergeing image and sent feats for object affordance")
     df = pd.read_csv(
         "data/pc/situated-affordances-sampled.csv", index_col="objectUID"
@@ -152,11 +162,16 @@ def merge_aff_img_sent_feats(image_feats, sent_feats, label_to_idx):
     for label_idx, label in enumerate(labels):
         label_to_idx[Task.Situated_ObjectsAffordances][label] = label_idx
 
+    idx_to_image[Task.Situated_ObjectsAffordances] = {}
+
+    for i in range(len(labels)):
+        idx_to_image[Task.Situated_ObjectsAffordances][sent_idxs[i]] = image_names[image_idxs[i]]
+
     print("Saving file")
     np.savez("data/clip/sentences.clip_obj_aff_full.npz", matrix=full_feats)
 
 
-def merge_aff_prop_img_sent_feats(image_feats, sent_feats, label_to_idx):
+def merge_aff_prop_img_sent_feats(image_feats, sent_feats, image_names, label_to_idx, idx_to_image):
     print("Mergeing image and sent feats for property affordance")
     aff_df = pd.read_csv(
         "data/pc/situated-affordances-sampled.csv", index_col="objectUID"
@@ -193,7 +208,18 @@ def merge_aff_prop_img_sent_feats(image_feats, sent_feats, label_to_idx):
     for label_idx, label in enumerate(labels):
         label_to_idx[Task.Situated_AffordancesProperties][label] = label_idx
 
+    idx_to_image[Task.Situated_AffordancesProperties] = {}
+
+    for i in range(len(labels)):
+        idx_to_image[Task.Situated_AffordancesProperties][sent_idxs[i]] = image_names[image_idxs[i]]
+
     print("Saving file")
     np.savez("data/clip/sentences.clip_aff_prop_full.npz", matrix=full_feats)
+
+def get_property_images(image_names, imgid2file):
+    label_df = pd.read_csv("data/pc/situated-properties.csv", index_col="objectUID")
+    property_to_image = {}
+    
+    
 
 get_situated_clip_full_emb()
