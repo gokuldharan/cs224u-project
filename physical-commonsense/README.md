@@ -98,15 +98,13 @@ python -m pc.graph
 
 ## Loading and Saving the CLIP Classifier
 
-Save a ClipClassifier model after training like this
+Save a ClipClassifier model after training as follows. The save path must have a leading datadir for the model to save correctly, even if just "."
 ```
-# Must have a leading datadir for the model to save correctly, even if just "."
 model.save("data/clip_classifier.pt")
 ```
 
-You can load a save model as follows
+You can load a save model as follows, the `text_only` flag is false by default. Make sure the flag matches the model you saved.
 ```
-# text_only flag is false by default. Make sure the flag matches the model you saved
 model = ClipClassifier.load("data/clip_classifier.pt", text_only=False)
 ```
 
