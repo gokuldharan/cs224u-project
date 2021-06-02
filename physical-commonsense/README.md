@@ -103,7 +103,7 @@ Save a ClipClassifier model after training as follows. The save path must have a
 model.save("data/clip_classifier.pt")
 ```
 
-You can load a save model as follows, the `text_only` flag is false by default. Make sure the flag matches the model you saved.
+You can load a saved model as follows, the `text_only` flag is false by default. Make sure the flag matches the model you saved.
 ```
 model = ClipClassifier.load("data/clip_classifier.pt", text_only=False)
 ```
