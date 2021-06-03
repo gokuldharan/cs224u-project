@@ -53,7 +53,7 @@ from pc import util
 
 
 class ClipDataset(Dataset):
-    def __init__(self, task: Task, image_preprocesser, train: bool, gan_imgs: bool=False, text_only: bool=False) -> None:
+    def __init__(self, task: Task, image_preprocesser, train: bool, gan_imgs: bool=False, text_only: bool=False, dev: bool=True) -> None:
         """
         Args:
             task: task to use
@@ -61,7 +61,7 @@ class ClipDataset(Dataset):
         """
         # load labels and y data
         self.text_only = text_only
-        train_data, test_data = get(task)
+        train_data, test_data = get(task, dev)
         split_data = train_data if train else test_data
         self.labels, self.y = split_data
         assert len(self.labels) == len(self.y)
@@ -87,7 +87,7 @@ class ClipDataset(Dataset):
             if gan_imgs:
                 self.images = [f"data/situated_sentence_images/{line_mapping[label]}.png" for label in self.labels]
             else:
-                sent_idx_to_image = pkl.load(open("data/clip/idx_to_image.pkl", "rb"))[task]
+                sent_idx_to_image = pkl.load(open("data/clip/sent_idx_to_image.pkl", "rb"))[task]
                 self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[line_mapping[label]]) for label in self.labels]
 
         # show some samples. This is a really great idiom that huggingface does. Baking
@@ -240,6 +240,7 @@ def main() -> None:
     )
     parser.add_argument("--gan-imgs", dest="gan_imgs", action="store_true")
     parser.add_argument("--text-only", dest="text_only", action="store_true")
+    parser.add_argument("--dev", dest="dev", action="store_true")
     parser.add_argument(
         "--task",
         type=str,
@@ -248,31 +249,45 @@ def main() -> None:
         required=True,
     )
     parser.add_argument("--epochs", type=int, default=5, help="How many epochs to run")
+    parser.add_argument("--early-stopping", type=int, default=5, help="num runs with less than threshold change in loss")
+    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
+    parser.add_argument("--optimizer", type=str, default="adamw", help="training optimizer")
+    parser.add_argument("--warmup_ratio", type=float, default="0.1", help="training optimizer")
+    parser.add_argument("--batch-size", type=int, default=64, help="training batch size")
+    parser.add_argument("--activation", type=str, default="relu", help="mlp hidden layer activation")
+    parser.add_argument("--dropout", type=float, default=0.0, help="mlp drop out")
     args = parser.parse_args()
     task = TASK_REV_MEDIUMHAND[args.task]
 
     device = torch.device("cuda")
-    initial_lr = 1e-7
-    warmup_proportion = 0.1
-    train_batch_size = 64
+    initial_lr = args.lr
+    warmup_proportion = args.warmup_ratio
+    train_batch_size = args.batch_size
     test_batch_size = 96
     train_epochs = args.epochs
 
+    if args.activation.lower() == "relu":
+        activation = nn.ReLU
+    elif args.activation.lower() == "gelu":
+        activation = nn.GELU
+    else:
+        raise Exception("Please give a valid activation function. One of relu or gelu")
+
     print("Building model...")
     if args.text_only:
-        model, preprocess = get_clip_classifier(512, 0.0, 128, nn.ReLU, 0.0, 1, text_only=args.text_only)
+        model, preprocess = get_clip_classifier(512, args.dropout, 128, activation, args.dropout, 1, text_only=args.text_only)
         model.to(device)
     else:
-        model, preprocess = get_clip_classifier(1024, 0.0, 128, nn.ReLU, 0.0, 1, text_only=args.text_only)
+        model, preprocess = get_clip_classifier(1024, args.dropout, 128, activation, args.dropout, 1, text_only=args.text_only)
         model.to(device)
 
     print("Loading traning data")
-    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, text_only=args.text_only)
+    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=args.dev)
     train_loader = DataLoader(
         train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=8
     )
     print("Loading test data")
-    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, text_only=args.text_only)
+    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=args.dev)
     test_loader = DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=8
     )
@@ -296,7 +311,16 @@ def main() -> None:
     t_total = int(((len(train_dataset) // train_batch_size) + 1) * train_epochs)
     print("Num train optimization steps: {}".format(t_total))
     loss_fn = nn.MSELoss()
-    optimizer = AdamW(optimizer_grouped_parameters, lr=initial_lr)
+
+    if args.optimizer.lower() == "adamw":
+        optimizer = AdamW(optimizer_grouped_parameters, lr=initial_lr)
+    elif args.optimizer.lower() == "adam":
+        optimizer = Adam(optimizer_grouped_parameters, lr=initial_lr)
+    elif args.optimizer.lower() == "sgd":
+        optimizer = SGD(optimizer_grouped_parameters, lr=initial_lr)
+    else:
+        raise Exception("Please give a valid optimizer. One of adamw, adam, or sgd")
+        
     scheduler = WarmupLinearSchedule(
         optimizer, warmup_steps=warmup_proportion * t_total, t_total=t_total
     )
@@ -312,7 +336,7 @@ def main() -> None:
         image_state = "mscoco_imgs"
 
     global_i = 0
-    epoch = make_epoch_runner(task, device, model, loss_fn, optimizer, scheduler, viz, args.text_only)
+    epoch = make_epoch_runner(task, device, model, loss_fn, optimizer, scheduler, args.early_stopping, viz, args.text_only)
     # print("Running eval before training.")
     # epoch(test_loader, len(test_dataset), False, "test", global_i)
     for epoch_i in range(train_epochs):
@@ -322,28 +346,43 @@ def main() -> None:
     print("Running eval after {} epochs.".format(train_epochs))
     metrics_results, model = epoch(test_loader, len(test_dataset), False, "test", global_i, args.text_only)
 
-    #Save model and results
-    if not os.path.exists(f"runs/clip/{args.task}"):
-        os.mkdir(f"runs/clip/{args.task}")
-    model.save(f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
+    if dev:
+        # Save run scores with hyperparams specified 
+        dir_name = f"runs/clip/{args.task}-hyperparam-search"
+        _, micro_f1, macro_f1s, _, _ = metrics_results
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
 
-    # write per-datum results to file
-    _, micro_f1, macro_f1s, _, per_datum = metrics_results
-    
-    with open(f"runs/clip/{args.task}/{image_state}_test_results.txt", "w") as r:
-        r.write(f"micro f1: {micro_f1}")
-        for cat, macro_f1 in macro_f1s.items():
-            r.write(f"{cat}: {macro_f1}")
+        with open(f"{dir_name}/lr{args.lr}-batch{args.batch_size}-act{args.activation}-dropout{args.dropout}-opt{args.optimizer}", "w") as r:
+            r.write(f"micro f1: {micro_f1} ")
+            for cat, macro_f1 in macro_f1s.items():
+                r.write(f"{cat}: {macro_f1} ")
 
-        r.close()
+            r.close()
 
-    path = os.path.join(
-        "data", "results", "{}-{}-perdatum.txt".format("clip", TASK_MEDIUMHAND[task])
-    )
-    with open(path, "w") as f:
-        f.write(util.np2str(per_datum) + "\n")
+    else:
+        #Save model and results
+        if not os.path.exists(f"runs/clip/{args.task}"):
+            os.mkdir(f"runs/clip/{args.task}")
+        model.save(f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
 
-    viz.flush()
+        # write per-datum results to file
+        _, micro_f1, macro_f1s, _, per_datum = metrics_results
+        
+        with open(f"runs/clip/{args.task}/{image_state}_test_results.txt", "w") as r:
+            r.write(f"micro f1: {micro_f1} ")
+            for cat, macro_f1 in macro_f1s.items():
+                r.write(f"{cat}: {macro_f1} ")
+
+            r.close()
+
+        path = os.path.join(
+            "data", "results", "{}-{}-perdatum.txt".format("clip", TASK_MEDIUMHAND[task])
+        )
+        with open(path, "w") as f:
+            f.write(util.np2str(per_datum) + "\n")
+
+        viz.flush()
 
 if __name__ == "__main__":
     main()

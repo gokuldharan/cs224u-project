@@ -125,31 +125,48 @@ def _get_abstract_objects_properties() -> Tuple[TaskData, TaskData]:
     )
 
 
-def _get_situated_objects_properties() -> Tuple[TaskData, TaskData]:
+def _get_situated_objects_properties(dev) -> Tuple[TaskData, TaskData]:
     # read in situated properties data, index by object. remove extra data cols.
     df = pd.read_csv("data/pc/situated-properties.csv", index_col="objectUID").drop(
         columns=["cocoImgID", "cocoAnnID"]
     )
 
-    return _train_test_df_expand(
-        df,
-        "data/pc/situated-train-object-uids.txt",
-        "data/pc/situated-test-object-uids.txt",
-    )
+    if dev:
+        return _train_test_df_expand(
+            df,
+            "data/pc/situated-dev-train-object-uids.txt",
+            "data/pc/situated-dev-val-object-uids.txt",
+        )
+
+    else:
+        return _train_test_df_expand(
+            df,
+            "data/pc/situated-train-object-uids.txt",
+            "data/pc/situated-test-object-uids.txt",
+        )
+        
 
 
-def _get_situated_objects_affordances() -> Tuple[TaskData, TaskData]:
+def _get_situated_objects_affordances(dev) -> Tuple[TaskData, TaskData]:
     # read in situated affordances data, index by object. remove extra data cols.
     df = pd.read_csv(
         "data/pc/situated-affordances-sampled.csv", index_col="objectUID"
     ).drop(columns=["cocoImgID", "cocoAnnID", "objectHuman"])
 
     # grab the 3 points that are on, and sample 3 that are off
-    train_df, test_df = _train_test_df_split(
-        df,
-        "data/pc/situated-train-object-uids.txt",
-        "data/pc/situated-test-object-uids.txt",
-    )
+    if dev:
+        train_df, test_df = _train_test_df_split(
+            df,
+            "data/pc/situated-dev-train-object-uids.txt",
+            "data/pc/situated-dev-val-object-uids.txt",
+        )
+
+    else:
+        train_df, test_df = _train_test_df_split(
+            df,
+            "data/pc/situated-train-object-uids.txt",
+            "data/pc/situated-test-object-uids.txt",
+        )
 
     results: List[TaskData] = []
     for sub_df in [train_df, test_df]:
@@ -173,7 +190,7 @@ def _get_situated_objects_affordances() -> Tuple[TaskData, TaskData]:
     return (results[0], results[1])
 
 
-def _get_situated_affordances_properties() -> Tuple[TaskData, TaskData]:
+def _get_situated_affordances_properties(dev) -> Tuple[TaskData, TaskData]:
     # read in BOTH the situated affordances and properties data frames. Conceptually
     # join based on the coco annotation id (uniqe + matching across both).
     aff_df_full = pd.read_csv(
@@ -182,17 +199,30 @@ def _get_situated_affordances_properties() -> Tuple[TaskData, TaskData]:
     prop_df_full = pd.read_csv(
         "data/pc/situated-properties.csv", index_col="objectUID"
     ).drop(columns=["cocoImgID"])
+    
+    if dev:
+        aff_train_df, aff_test_df = _train_test_df_split(
+            aff_df_full,
+            "data/pc/situated-dev-train-object-uids.txt",
+            "data/pc/situated-dev-val-object-uids.txt",
+        )
+        prop_train_df, prop_test_df = _train_test_df_split(
+            prop_df_full,
+            "data/pc/situated-dev-train-object-uids.txt",
+            "data/pc/situated-dev-val-object-uids.txt",
+        )
 
-    aff_train_df, aff_test_df = _train_test_df_split(
-        aff_df_full,
-        "data/pc/situated-train-object-uids.txt",
-        "data/pc/situated-test-object-uids.txt",
-    )
-    prop_train_df, prop_test_df = _train_test_df_split(
-        prop_df_full,
-        "data/pc/situated-train-object-uids.txt",
-        "data/pc/situated-test-object-uids.txt",
-    )
+    else:
+        aff_train_df, aff_test_df = _train_test_df_split(
+            aff_df_full,
+            "data/pc/situated-train-object-uids.txt",
+            "data/pc/situated-test-object-uids.txt",
+        )
+        prop_train_df, prop_test_df = _train_test_df_split(
+            prop_df_full,
+            "data/pc/situated-train-object-uids.txt",
+            "data/pc/situated-test-object-uids.txt",
+        )
 
     results: List[TaskData] = []
     for aff_df, prop_df in [(aff_train_df, prop_train_df), (aff_test_df, prop_test_df)]:
@@ -218,7 +248,7 @@ def _get_situated_affordances_properties() -> Tuple[TaskData, TaskData]:
     return (results[0], results[1])
 
 
-def get(task: Task) -> Tuple[TaskData, TaskData]:
+def get(task: Task, dev=True) -> Tuple[TaskData, TaskData]:
     """Returns 2-tuple (train, test).
 
     Each of them can be None if that split isn't defined for that task.
@@ -226,11 +256,11 @@ def get(task: Task) -> Tuple[TaskData, TaskData]:
     if task is Task.Abstract_ObjectsProperties:
         return _get_abstract_objects_properties()
     elif task is Task.Situated_ObjectsProperties:
-        return _get_situated_objects_properties()
+        return _get_situated_objects_properties(dev)
     elif task is Task.Situated_ObjectsAffordances:
-        return _get_situated_objects_affordances()
+        return _get_situated_objects_affordances(dev)
     elif task is Task.Situated_AffordancesProperties:
-        return _get_situated_affordances_properties()
+        return _get_situated_affordances_properties(dev)
     else:
         raise ValueError("Unknown task: {}".format(task))
 
