@@ -59,31 +59,31 @@ python -m pc.finetune_clip --dev \
                            --lr 1e-7 \
                            --warmup-ratio 0.1 \
                            --batch-size 64 \
-                           --activation gelu \
+                           --activation relu \
                            --dropout 0.0
 
 # Finetune clip model with text only
-python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --text-only --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --text-only --task "situated-AP" --epochs 5 --lr 1e-7 
 
 # Finetune clip model with mscoco images (still need to run get clip embeddings before this)
-python -m pc.finetune_clip --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --task "situated-AP" --epochs 5 --lr 1e-7 
 
 # Finetune clip model with gan generated images (still need to run get clip embeddings before this)
-python -m pc.finetune_clip --gan-imgs --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --gan-imgs --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --gan-imgs --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --gan-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --task "situated-OA" --epochs 5 --lr 5e-7 
+python -m pc.finetune_clip --gan-imgs --task "situated-AP" --epochs 5 --lr 1e-7 
 
 # Random image experiments, match a sentence with a randomly selected image instead of the corresponding one
-python -m pc.finetuine_clip --rand-imgs --task "situated-OP" --epochs 15
-python -m pc.finetuine_clip --rand-imgs --task "situated-OA" --epochs 15
-python -m pc.finetuine_clip --rand-imgs --task "situated-AP" --epochs 6
-python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-OP" --epochs 15
-python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-OA" --epochs 15
-python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --rand-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --rand-imgs --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --rand-imgs --task "situated-AP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-AP" --epochs 5 --lr 1e-7
 
 # Run the baselines: random and majority.
 python -m pc.baselines
