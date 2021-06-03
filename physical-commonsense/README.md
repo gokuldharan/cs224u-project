@@ -51,6 +51,17 @@ python -m pc.get_clip_embeddings
 # Run MLP training experiments with clip embeddings
 python -m pc.clip_experiments
 
+# For hyperparamter tuning add the --dev flag
+# This uses a train/val split sampled from the train set exclusively
+# You can also set a number of hyperparameters
+python -m pc.finetune_clip --dev \
+                           --task "situated-OA" \
+                           --lr 1e-7 \
+                           --warmup-ratio 0.1 \
+                           --batch-size 64 \
+                           --activation gelu \
+                           --dropout 0.0
+
 # Finetune clip model with text only
 python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 15
 python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 15
@@ -65,6 +76,14 @@ python -m pc.finetune_clip --task "situated-AP" --epochs 6
 python -m pc.finetune_clip --gan-imgs --task "situated-OP" --epochs 15
 python -m pc.finetune_clip --gan-imgs --task "situated-OA" --epochs 15
 python -m pc.finetune_clip --gan-imgs --task "situated-AP" --epochs 6
+
+# Random image experiments, match a sentence with a randomly selected image instead of the corresponding one
+python -m pc.finetuine_clip --rand-imgs --task "situated-OP" --epochs 15
+python -m pc.finetuine_clip --rand-imgs --task "situated-OA" --epochs 15
+python -m pc.finetuine_clip --rand-imgs --task "situated-AP" --epochs 6
+python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-OP" --epochs 15
+python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-OA" --epochs 15
+python -m pc.finetuine_clip --gan-imgs --rand-imgs --task "situated-AP" --epochs 6
 
 # Run the baselines: random and majority.
 python -m pc.baselines
