@@ -90,7 +90,7 @@ class ClipClassifier(nn.Module):
 
 
 def get_clip_classifier(d_in, input_dropout, h, activation, innner_dropout, d_out, train=True, text_only=False):
-    clip_model, preprocess = clip.load("ViT-B/32")
+    clip_model, preprocess = clip.load("ViT-B/32", jit=False)
     classifier = ClipClassifier(clip_model, d_in, input_dropout, h, activation, innner_dropout, d_out, train, text_only) 
     
     return classifier, preprocess

@@ -252,7 +252,7 @@ def main() -> None:
     parser.add_argument("--early-stopping", type=int, default=5, help="num runs with less than threshold change in loss")
     parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
     parser.add_argument("--optimizer", type=str, default="adamw", help="training optimizer")
-    parser.add_argument("--warmup_ratio", type=float, default="0.1", help="training optimizer")
+    parser.add_argument("--warmup-ratio", type=float, default="0.1", help="training optimizer")
     parser.add_argument("--batch-size", type=int, default=64, help="training batch size")
     parser.add_argument("--activation", type=str, default="relu", help="mlp hidden layer activation")
     parser.add_argument("--dropout", type=float, default=0.0, help="mlp drop out")
@@ -273,6 +273,11 @@ def main() -> None:
     else:
         raise Exception("Please give a valid activation function. One of relu or gelu")
 
+    if args.dev:
+        dev=True
+    else:
+        dev=False
+
     print("Building model...")
     if args.text_only:
         model, preprocess = get_clip_classifier(512, args.dropout, 128, activation, args.dropout, 1, text_only=args.text_only)
@@ -282,12 +287,12 @@ def main() -> None:
         model.to(device)
 
     print("Loading traning data")
-    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=args.dev)
+    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=dev)
     train_loader = DataLoader(
         train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=8
     )
     print("Loading test data")
-    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=args.dev)
+    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=dev)
     test_loader = DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=8
     )
@@ -315,9 +320,9 @@ def main() -> None:
     if args.optimizer.lower() == "adamw":
         optimizer = AdamW(optimizer_grouped_parameters, lr=initial_lr)
     elif args.optimizer.lower() == "adam":
-        optimizer = Adam(optimizer_grouped_parameters, lr=initial_lr)
+        optimizer = torch.optim.Adam(optimizer_grouped_parameters, lr=initial_lr)
     elif args.optimizer.lower() == "sgd":
-        optimizer = SGD(optimizer_grouped_parameters, lr=initial_lr)
+        optimizer = torch.optim.SGD(optimizer_grouped_parameters, lr=initial_lr)
     else:
         raise Exception("Please give a valid optimizer. One of adamw, adam, or sgd")
         
@@ -336,7 +341,7 @@ def main() -> None:
         image_state = "mscoco_imgs"
 
     global_i = 0
-    epoch = make_epoch_runner(task, device, model, loss_fn, optimizer, scheduler, args.early_stopping, viz, args.text_only)
+    epoch = make_epoch_runner(task, device, model, loss_fn, optimizer, scheduler, viz, args.text_only)
     # print("Running eval before training.")
     # epoch(test_loader, len(test_dataset), False, "test", global_i)
     for epoch_i in range(train_epochs):
@@ -346,14 +351,14 @@ def main() -> None:
     print("Running eval after {} epochs.".format(train_epochs))
     metrics_results, model = epoch(test_loader, len(test_dataset), False, "test", global_i, args.text_only)
 
-    if dev:
+    if args.dev:
         # Save run scores with hyperparams specified 
         dir_name = f"runs/clip/{args.task}-hyperparam-search"
         _, micro_f1, macro_f1s, _, _ = metrics_results
         if not os.path.exists(dir_name):
             os.mkdir(dir_name)
 
-        with open(f"{dir_name}/lr{args.lr}-batch{args.batch_size}-act{args.activation}-dropout{args.dropout}-opt{args.optimizer}", "w") as r:
+        with open(f"{dir_name}/{args.lr}-warmup{args.warmup_ratio}-{args.activation}-dropout{args.dropout}", "w") as r:
             r.write(f"micro f1: {micro_f1} ")
             for cat, macro_f1 in macro_f1s.items():
                 r.write(f"{cat}: {macro_f1} ")
@@ -364,7 +369,8 @@ def main() -> None:
         #Save model and results
         if not os.path.exists(f"runs/clip/{args.task}"):
             os.mkdir(f"runs/clip/{args.task}")
-        model.save(f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
+        torch.save(model, f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
+        #model.save(f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
 
         # write per-datum results to file
         _, micro_f1, macro_f1s, _, per_datum = metrics_results
