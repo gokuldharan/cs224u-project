@@ -1,0 +1,16 @@
+bicycle
+tie
+bus
+kite
+baseball_glove
+mouse
+car
+bed
+giraffe
+remote
+motorcycle
+wine_glass
+backpack
+cow
+cat
+traffic_light
