@@ -71,32 +71,43 @@ class ClipDataset(Dataset):
         self.text_only = text_only
         train_data, test_data = get(task, dev)
         split_data = train_data if train else test_data
-        self.labels, self.y = split_data
-        assert len(self.labels) == len(self.y)
+        labels, y_list = split_data
+        self.label_to_y = {}
+        for label, y in zip(labels, y_list):
+            self.label_to_y[label] = y
 
         # load X index
         # line_mapping maps from word1/word2 label to sentence index in sentence list.
         self.line_mapping = {}
+        self.line_mapping_r = {}
         task_short = TASK_SHORTHAND[task]
         with open("data/sentences/index.csv", "r") as f:
             reader = csv.DictReader(f)
             for i, row in enumerate(reader):
                 if row["task"] == task_short:
                     self.line_mapping[row["uids"]] = i
+                    self.line_mapping_r[i] = row["uids"]
                     # TODO: check that i lines up and isn't off by one
 
+        self.task_idxs = sorted(list(set([self.line_mapping[label] for label in labels]))) #Using a list to keep deterministic ordering
         with open("data/sentences/sentences.txt", "r") as f:
             all_sentences = [line.strip() for line in f.readlines()]
-            self.sentences = [all_sentences[self.line_mapping[label]] for label in self.labels]
+            self.sent_idx_to_dataset_id = {}
+            self.sentences = []
+            for i, sent in enumerate(all_sentences):
+                if i in self.task_idxs:
+                    self.sentences.append(sent)
+                    self.sent_idx_to_dataset_id[i] = len(self.sentences) - 1
+            
             self.tokenized_sents = clip.tokenize(self.sentences)
 
         # Load map from sentence index to image names and get list of image names
         if not text_only:
             if gan_imgs:
-                self.images = [f"data/situated_sentence_images/{self.line_mapping[label]}.png" for label in self.labels]
+                self.images = [f"data/situated_sentence_images/{task_idx}.png" for task_idx in self.task_idxs]
             else:
                 sent_idx_to_image = pkl.load(open("data/clip/sent_idx_to_image.pkl", "rb"))[task]
-                self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[self.line_mapping[label]]) for label in self.labels]
+                self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[task_idx]) for task_idx in self.task_idxs]
 
             if random_imgs:
                 random.shuffle(self.images)
@@ -107,8 +118,8 @@ class ClipDataset(Dataset):
         # describing great food.*
         n_sample = 5
         print("{} Samples:".format(n_sample))
-        for i in random.sample(range(len(self.labels)), n_sample):
-            label = self.labels[i]
+        for i in random.sample(range(len(self.task_idxs)), n_sample):
+            label = self.line_mapping_r[self.task_idxs[i]]
             sentence = self.sentences[i]
             if not text_only:
                 image = self.images[i]
@@ -120,10 +131,10 @@ class ClipDataset(Dataset):
             self.image_preprocesser = image_preprocesser
 
     def __len__(self) -> int:
-        return len(self.labels)
+        return len(self.task_idxs)
 
     def __getitem__(self, i: int) -> Dict[str, Any]:
-        label = self.labels[i]
+        label = self.line_mapping_r[self.task_idxs[i]]
         tok_sent = self.tokenized_sents[i]
 
         if not self.text_only:
@@ -136,14 +147,14 @@ class ClipDataset(Dataset):
                 "input_ids": tok_sent,
                 "input_image": image,
                 "label": label,
-                "y": self.y[i],
+                "y": self.label_to_y[label],
             }
 
         else:
             return {
                 "input_ids": tok_sent,
                 "label": label,
-                "y": self.y[i],
+                "y": self.label_to_y[label],
             }
 
 
