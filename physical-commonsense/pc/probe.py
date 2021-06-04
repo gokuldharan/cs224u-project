@@ -61,7 +61,7 @@ if __name__ == '__main__':
     else:
         image_name = args.image_name
 
-    model, preprocess = ClipClassifierDebug.loadNonJitFromFolder(args.model_path, text_only=False)
+    model, preprocess = ClipClassifierDebug.loadNonJitFromFolder(args.model_path, text_only=args.text)
     model.eval()
 
     if args.use_cuda:
