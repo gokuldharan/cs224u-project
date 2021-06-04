@@ -207,14 +207,24 @@ def train_and_test(
 
     # train
     labels_train, y_train_np = train_data
-    x_train_np = data.features(task, variant, labels_train)
-    centering = train(model, x_train_np, y_train_np, config)
+    train_label_to_y = {}
+    for label, y in zip(labels_train, y_train_np):
+        train_label_to_y[label] = y
+    labels_train_unique = sorted(list(set(labels_train))) 
+    y_train = [train_label_to_y[label] for label in labels_train_unique]
+    x_train_np = data.features(task, variant, labels_train_unique)
+    centering = train(model, x_train_np, y_train, config)
 
     # test
     labels_test, y_test_np = test_data
-    x_test_np = data.features(task, variant, labels_test)
-    y_test_hat = test(model, x_test_np, y_test_np, centering, config)
-    return metrics.report(y_test_hat, y_test_np, labels_test, data.TASK_LABELS[task])
+    test_label_to_y = {}
+    for label, y in zip(labels_test, y_test_np):
+        test_label_to_y[label] = y
+    labels_test_unique = sorted(list(set(labels_test))) 
+    y_test = [test_label_to_y[label] for label in labels_test_unique]
+    x_test_np = data.features(task, variant, labels_test_unique)
+    y_test_hat = test(model, x_test_np, y_test, centering, config)
+    return metrics.report(y_test_hat, y_test, labels_test_unique, data.TASK_LABELS[task])
 
 
 def main() -> None:
