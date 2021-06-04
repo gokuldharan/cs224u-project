@@ -71,8 +71,10 @@ class ClipDataset(Dataset):
         self.text_only = text_only
         train_data, test_data = get(task, dev)
         split_data = train_data if train else test_data
-        self.labels, self.y = split_data
-        assert len(self.labels) == len(self.y)
+        labels, y_list = split_data
+        self.label_to_y = {}
+        for label, y in zip(labels, y_list):
+            self.label_to_y[label] = y
 
         # load X index
         # line_mapping maps from word1/word2 label to sentence index in sentence list.
@@ -87,7 +89,7 @@ class ClipDataset(Dataset):
                     self.line_mapping_r[i] = row["uids"]
                     # TODO: check that i lines up and isn't off by one
 
-        self.task_idxs = sorted(list(set([self.line_mapping[label] for label in self.labels]))) #Using a list to keep deterministic ordering
+        self.task_idxs = sorted(list(set([self.line_mapping[label] for label in labels]))) #Using a list to keep deterministic ordering
         with open("data/sentences/sentences.txt", "r") as f:
             all_sentences = [line.strip() for line in f.readlines()]
             self.sent_idx_to_dataset_id = {}
@@ -145,14 +147,14 @@ class ClipDataset(Dataset):
                 "input_ids": tok_sent,
                 "input_image": image,
                 "label": label,
-                "y": self.y[i],
+                "y": self.label_to_y[label],
             }
 
         else:
             return {
                 "input_ids": tok_sent,
                 "label": label,
-                "y": self.y[i],
+                "y": self.label_to_y[label],
             }
 
 
