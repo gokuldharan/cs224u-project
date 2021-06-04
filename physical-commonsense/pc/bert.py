@@ -47,9 +47,10 @@ from pc.data import (
 from pc import metrics
 from pc import util
 
+torch.manual_seed(2021)
 
 class BertDataset(Dataset):
-    def __init__(self, task: Task, train: bool, seq_len: int = 20) -> None:
+    def __init__(self, task: Task, train: bool, seq_len: int = 20, dev: bool = True) -> None:
         """
         Args:
             task: task to use
@@ -60,24 +61,42 @@ class BertDataset(Dataset):
         self.seq_len = seq_len
 
         # load labels and y data
-        train_data, test_data = get(task)
+        train_data, test_data = get(task, dev)
         split_data = train_data if train else test_data
-        self.labels, self.y = split_data
-        assert len(self.labels) == len(self.y)
+        labels, y_list = split_data
+        self.label_to_y = {}
+        for label, y in zip(labels, y_list):
+            self.label_to_y[label] = y
+
+        #self.labels, self.y = split_data
+        #assert len(self.labels) == len(self.y)
 
         # load X index
         # line_mapping maps from word1/word2 label to sentence index in sentence list.
         self.line_mapping: Dict[str, int] = {}
+        self.line_mapping_r = {}
         task_short = TASK_SHORTHAND[task]
         with open("data/sentences/index.csv", "r") as f:
             reader = csv.DictReader(f)
             for i, row in enumerate(reader):
                 if row["task"] == task_short:
                     self.line_mapping[row["uids"]] = i
+                    self.line_mapping_r[i] = row["uids"]
                     # TODO: check that i lines up and isn't off by one
 
+        self.task_idxs = sorted(list(set([self.line_mapping[label] for label in labels])))
+
         with open("data/sentences/sentences.txt", "r") as f:
-            self.sentences = [line.strip() for line in f.readlines()]
+            all_sentences = [line.strip() for line in f.readlines()]
+            self.sent_idx_to_dataset_id = {}
+            self.sentences = []
+            for i, sent in enumerate(all_sentences):
+                if i in self.task_idxs:
+                    self.sentences.append(sent)
+                    self.sent_idx_to_dataset_id[i] = len(self.sentences) - 1
+
+            #self.sentences = [line.strip() for line in f.readlines()]
+
 
         # show some samples. This is a really great idiom that huggingface does. Baking
         # little visible sanity checks like this into your code is just... *does gesture
@@ -85,9 +104,11 @@ class BertDataset(Dataset):
         # describing great food.*
         n_sample = 5
         print("{} Samples:".format(n_sample))
-        for i in random.sample(range(len(self.labels)), n_sample):
-            label = self.labels[i]
-            sentence = self.sentences[self.line_mapping[label]]
+        for i in random.sample(range(len(self.task_idxs)), n_sample):
+            #label = self.labels[i]
+            label = self.line_mapping_r[self.task_idxs[i]]
+            sentence = self.sentences[i]
+            #sentence = self.sentences[self.line_mapping[label]]
             print('- {}: "{}"'.format(label, sentence))
 
         print("Loading tokenizer...")
@@ -96,14 +117,16 @@ class BertDataset(Dataset):
         )
 
     def __len__(self) -> int:
-        return len(self.labels)
+        #return len(self.labels)
+        return len(self.task_idxs)
 
     def __getitem__(self, i: int) -> Dict[str, Any]:
-        label = self.labels[i]
+        label = self.line_mapping_r[self.task_idxs[i]]
+        #label = self.labels[i]
 
         # tokenize
         max_sent_len = self.seq_len - 2
-        sentence = self.sentences[self.line_mapping[label]]
+        sentence = self.sentences[i]
         tkns = ["[CLS]"] + self.tokenizer.tokenize(sentence)[:max_sent_len] + ["[SEP]"]
 
         input_mask = [1] * len(tkns)
@@ -121,7 +144,7 @@ class BertDataset(Dataset):
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "input_mask": torch.tensor(input_mask, dtype=torch.long),
             "label": label,
-            "y": self.y[i],
+            "y": self.label_to_y[label],
         }
 
 
@@ -218,6 +241,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+    parser.add_argument("--dev", dest="dev", action="store_true")
     parser.add_argument(
         "--task",
         type=str,
@@ -243,12 +267,12 @@ def main() -> None:
     model.to(device)
 
     print("Loading traning data")
-    train_dataset = BertDataset(task, True)
+    train_dataset = BertDataset(task, True, dev=args.dev)
     train_loader = DataLoader(
         train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=8
     )
     print("Loading test data")
-    test_dataset = BertDataset(task, False)
+    test_dataset = BertDataset(task, False, dev=args.dev)
     test_loader = DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=8
     )
@@ -289,15 +313,54 @@ def main() -> None:
         global_i += len(train_dataset)
     print("Running eval after {} epochs.".format(train_epochs))
     metrics_results = epoch(test_loader, len(test_dataset), False, "test", global_i)
-    viz.flush()
+#    viz.flush()
+#
+#    # write per-datum results to file
+#    _, _, _, _, per_datum = metrics_results
+#    path = os.path.join(
+#        "data", "results", "{}-{}-perdatum.txt".format("Bert", TASK_MEDIUMHAND[task])
+#    )
+#    with open(path, "w") as f:
+#        f.write(util.np2str(per_datum) + "\n")
 
-    # write per-datum results to file
-    _, _, _, _, per_datum = metrics_results
-    path = os.path.join(
-        "data", "results", "{}-{}-perdatum.txt".format("Bert", TASK_MEDIUMHAND[task])
-    )
-    with open(path, "w") as f:
-        f.write(util.np2str(per_datum) + "\n")
+    if args.dev:
+        # Save run scores with hyperparams specified
+        dir_name = f"runs/bert/{args.task}-hyperparam-search"
+        _, micro_f1, macro_f1s, _, _ = metrics_results
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+
+        with open(f"{dir_name}/dev_results.txt", "w") as r:
+            r.write(f"micro f1: {micro_f1} ")
+            for cat, macro_f1 in macro_f1s.items():
+                r.write(f"{cat}: {macro_f1} ")
+
+            r.close()
+
+    else:
+        #Save model and results
+        if not os.path.exists(f"runs/bert/{args.task}"):
+            os.mkdir(f"runs/bert/{args.task}")
+        torch.save(model, f"runs/bert/{args.task}/bert_classifier.pt")
+        #model.save(f"runs/clip/{args.task}/{image_state}_clip_classifier.pt")
+
+        # write per-datum results to file
+        _, micro_f1, macro_f1s, _, per_datum = metrics_results
+
+        with open(f"runs/bert/{args.task}/test_results.txt", "w") as r:
+            r.write(f"micro f1: {micro_f1} ")
+            for cat, macro_f1 in macro_f1s.items():
+                r.write(f"{cat}: {macro_f1} ")
+
+            r.close()
+
+        path = os.path.join(
+            "data", "results", "{}-{}-perdatum.txt".format(f"bert".replace("_", "-"), TASK_MEDIUMHAND[task])
+        )
+        with open(path, "w") as f:
+            f.write(util.np2str(per_datum) + "\n")
+
+        viz.flush()
 
 
 if __name__ == "__main__":
