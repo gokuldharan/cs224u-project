@@ -89,7 +89,7 @@ if __name__ == "__main__":
     logger.info("Using output dir: %s" % output_dir)
     logger.info("Using seed {}".format(cfg.SEED))
 
-    if not (torch.cuda.is_available() and cfg.CUDA):
+    if True:#not (torch.cuda.is_available() and cfg.CUDA):
         cfg.CUDA = False
         cfg.DEVICE = torch.device('cpu')
     else:
@@ -139,7 +139,7 @@ if __name__ == "__main__":
             dataloaders.append(dataloader)
 
         algo = trainer(output_dir, dataloaders, dataset.n_words, dataset.ixtoword, resume)
-    elif cfg.TRAIN.OUTPUT_ONLY:
+    elif cfg.TRAIN.OUTPUT_ONLY or cfg.TRAIN.OUTPUT_DISC_ONLY:
         dataset = TextOnlyDataset(cfg.DATA_DIR, img_dir, split_dir, base_size=cfg.TREE.BASE_SIZE,
                               transform=image_transform, eval=eval, use_generated_bboxes=cfg.TRAIN.GENERATED_BBOXES)
         assert dataset
@@ -183,6 +183,13 @@ if __name__ == "__main__":
                                                     "generated bounding boxes at test time."
         use_generated_bboxes = cfg.TRAIN.GENERATED_BBOXES
         algo.genOutputs(split_dir, num_samples=57140)  # generate images
+    elif cfg.TRAIN.OUTPUT_DISC_ONLY:
+        '''generate images from pre-extracted embeddings'''
+        assert not cfg.TRAIN.OPTIMIZE_DATA_LOADING, "\"cfg.TRAIN.OPTIMIZE_DATA_LOADING\" " \
+                                                    "not valid for sampling since we use" \
+                                                    "generated bounding boxes at test time."
+        use_generated_bboxes = cfg.TRAIN.GENERATED_BBOXES
+        algo.genDiscOutputs(split_dir, num_samples=57140)  # generate images
     else:
         '''generate images from pre-extracted embeddings'''
         assert not cfg.TRAIN.OPTIMIZE_DATA_LOADING, "\"cfg.TRAIN.OPTIMIZE_DATA_LOADING\" " \

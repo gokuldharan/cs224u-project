@@ -1,7 +1,8 @@
 SOA/output/*
 SOA/yolov3.weights
 output/op-gan/valid/*
-
+physical-commonsense/data/situated*
+physical-commonsense/data/mscoco*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

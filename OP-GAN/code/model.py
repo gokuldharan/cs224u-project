@@ -849,3 +849,22 @@ class D_NET256(nn.Module):
         x_code4 = self.img_code_s64_2(x_code4)
 
         return x_code4
+
+    def partial_forward(self, image, label, transf_matrices, transf_matrices_inv, max_objects):
+        # object pathway
+        h_code_locals = image.new_zeros(image.shape[0], cfg.GAN.DISC_FEAT_DIM * 2, 64, 64, dtype=torch.float)
+
+        for idx in range(max_objects):
+            current_label = label[:, idx].view(label.shape[0], cfg.TEXT.CLASSES_NUM, 1, 1)
+            current_label = current_label.repeat(1, 1, 64, 64)
+            h_code_local = stn(image, transf_matrices[:, idx], (image.shape[0], image.shape[1], 64, 64))
+            h_code_local = torch.cat((h_code_local, current_label), 1)
+            h_code_local = self.local(h_code_local)
+            h_code_local = stn(h_code_local, transf_matrices_inv[:, idx],
+                               (h_code_local.shape[0], h_code_local.shape[1], 64, 64))
+            h_code_locals = merge_tensors(h_code_locals, h_code_local, idx)
+
+        x_code_64 = self.encode_img(image)
+        x_code_64 = torch.cat((x_code_64, h_code_locals), 1)
+        print(x_code_64.shape)
+        return x_code64
