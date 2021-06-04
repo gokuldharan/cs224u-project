@@ -260,11 +260,11 @@ def main() -> None:
         help="Name of task to run",
         required=True,
     )
-    parser.add_argument("--epochs", type=int, default=5, help="How many epochs to run")
-    parser.add_argument("--lr", type=float, default=5e-7, help="Learning rate")
+    parser.add_argument("--epochs", type=int, default=6, help="How many epochs to run")
+    parser.add_argument("--lr", type=float, default=1e-7, help="Learning rate")
     parser.add_argument("--warmup-ratio", type=float, default=0.1, help="training optimizer")
     parser.add_argument("--batch-size", type=int, default=64, help="training batch size")
-    parser.add_argument("--activation", type=str, default="gelu", help="mlp hidden layer activation")
+    parser.add_argument("--activation", type=str, default="relu", help="mlp hidden layer activation")
     parser.add_argument("--dropout", type=float, default=0.0, help="mlp drop out")
     args = parser.parse_args()
     task = TASK_REV_MEDIUMHAND[args.task]
@@ -390,7 +390,7 @@ def main() -> None:
             r.close()
 
         path = os.path.join(
-            "data", "results", "{}-{}-perdatum.txt".format("clip", TASK_MEDIUMHAND[task])
+            "data", "results", "{}-{}-perdatum.txt".format(f"clip-{image_state}".replace("_", "-"), TASK_MEDIUMHAND[task])
         )
         with open(path, "w") as f:
             f.write(util.np2str(per_datum) + "\n")
