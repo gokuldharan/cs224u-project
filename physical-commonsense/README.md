@@ -51,20 +51,39 @@ python -m pc.get_clip_embeddings
 # Run MLP training experiments with clip embeddings
 python -m pc.clip_experiments
 
+# For hyperparamter tuning add the --dev flag
+# This uses a train/val split sampled from the train set exclusively
+# You can also set a number of hyperparameters
+python -m pc.finetune_clip --dev \
+                           --task "situated-OA" \
+                           --lr 1e-7 \
+                           --warmup-ratio 0.1 \
+                           --batch-size 64 \
+                           --activation relu \
+                           --dropout 0.0
+
 # Finetune clip model with text only
-python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --text-only --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --text-only --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --text-only --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --text-only --task "situated-AP" --epochs 5 --lr 1e-7 
 
 # Finetune clip model with mscoco images (still need to run get clip embeddings before this)
-python -m pc.finetune_clip --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --task "situated-AP" --epochs 5 --lr 1e-7 
 
 # Finetune clip model with gan generated images (still need to run get clip embeddings before this)
-python -m pc.finetune_clip --gan-imgs --task "situated-OP" --epochs 15
-python -m pc.finetune_clip --gan-imgs --task "situated-OA" --epochs 15
-python -m pc.finetune_clip --gan-imgs --task "situated-AP" --epochs 6
+python -m pc.finetune_clip --gan-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --task "situated-OA" --epochs 5 --lr 5e-7 
+python -m pc.finetune_clip --gan-imgs --task "situated-AP" --epochs 5 --lr 1e-7 
+
+# Random image experiments, match a sentence with a randomly selected image instead of the corresponding one
+python -m pc.finetune_clip --rand-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --rand-imgs --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --rand-imgs --task "situated-AP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-OP" --epochs 5 --lr 1e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-OA" --epochs 5 --lr 5e-7
+python -m pc.finetune_clip --gan-imgs --rand-imgs --task "situated-AP" --epochs 5 --lr 1e-7
 
 # Run the baselines: random and majority.
 python -m pc.baselines
@@ -94,18 +113,6 @@ python -m scripts.perdatum_to_category
 # category, as well as comparing performance vs word occurrence in natural language
 # (found in data/nl/). Writes graphs to data/results/graphs.
 python -m pc.graph
-```
-
-## Loading and Saving the CLIP Classifier
-
-Save a ClipClassifier model after training as follows. The save path must have a leading datadir for the model to save correctly, even if just "."
-```
-model.save("data/clip_classifier.pt")
-```
-
-You can load a saved model as follows, the `text_only` flag is false by default. Make sure the flag matches the model you saved.
-```
-model = ClipClassifier.load("data/clip_classifier.pt", text_only=False)
 ```
 
 ## Data
