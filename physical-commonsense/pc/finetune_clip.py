@@ -76,27 +76,27 @@ class ClipDataset(Dataset):
 
         # load X index
         # line_mapping maps from word1/word2 label to sentence index in sentence list.
-        line_mapping = {}
+        self.line_mapping = {}
         task_short = TASK_SHORTHAND[task]
         with open("data/sentences/index.csv", "r") as f:
             reader = csv.DictReader(f)
             for i, row in enumerate(reader):
                 if row["task"] == task_short:
-                    line_mapping[row["uids"]] = i
+                    self.line_mapping[row["uids"]] = i
                     # TODO: check that i lines up and isn't off by one
 
         with open("data/sentences/sentences.txt", "r") as f:
             all_sentences = [line.strip() for line in f.readlines()]
-            self.sentences = [all_sentences[line_mapping[label]] for label in self.labels]
+            self.sentences = [all_sentences[self.line_mapping[label]] for label in self.labels]
             self.tokenized_sents = clip.tokenize(self.sentences)
 
         # Load map from sentence index to image names and get list of image names
         if not text_only:
             if gan_imgs:
-                self.images = [f"data/situated_sentence_images/{line_mapping[label]}.png" for label in self.labels]
+                self.images = [f"data/situated_sentence_images/{self.line_mapping[label]}.png" for label in self.labels]
             else:
                 sent_idx_to_image = pkl.load(open("data/clip/sent_idx_to_image.pkl", "rb"))[task]
-                self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[line_mapping[label]]) for label in self.labels]
+                self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[self.line_mapping[label]]) for label in self.labels]
 
             if random_imgs:
                 random.shuffle(self.images)

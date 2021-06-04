@@ -1,0 +1,150 @@
+If you can feed something, then it is a tool. pred = 0.0232391357421875 gold = 0
+If you can feed something, then it is a toy. pred = 0.1798095703125 gold = 0
+If you can feed something, then it is an animal. pred = 0.49072265625 gold = 1
+If you can feed something, then it can fly. pred = 0.01751708984375 gold = 0
+If you can feed something, then it can swim. pred = 0.72998046875 gold = 0
+If you can feed something, then it comes in pairs. pred = 0.01812744140625 gold = 0
+If you can feed something, then it is eaten in summer. pred = 0.0144500732421875 gold = 0
+If you can feed something, then it is found on walls. pred = 0.01094818115234375 gold = 0
+If you can feed something, then it has a peel. pred = 0.0162811279296875 gold = 0
+If you can feed something, then it has shelves. pred = 0.0121917724609375 gold = 0
+If you can feed something, then it produces sound. pred = 0.85498046875 gold = 1
+If you can feed something, then it is cold. pred = 0.279296875 gold = 0
+If you can feed something, then it is dangerous. pred = 0.03533935546875 gold = 0
+If you can feed something, then it is decorative. pred = 0.018829345703125 gold = 0
+If you can feed something, then it is edible. pred = 0.0261993408203125 gold = 0
+If you can feed something, then it requires electricity. pred = 0.025665283203125 gold = 0
+If you can feed something, then it is expensive. pred = 0.057373046875 gold = 0
+If you can feed something, then it is fast. pred = 0.53271484375 gold = 1
+If you can feed something, then it is fun. pred = 0.329345703125 gold = 0
+If you can feed something, then it is hand-held. pred = 0.048492431640625 gold = 0
+If you can feed something, then it is hard. pred = 0.06671142578125 gold = 0
+If you can feed something, then it is heavy. pred = 0.426513671875 gold = 1
+If you can feed something, then it is big. pred = 0.386474609375 gold = 1
+If you can feed something, then it is loud. pred = 0.78369140625 gold = 0
+If you can feed something, then it is sharp. pred = 0.01337432861328125 gold = 0
+If you can feed something, then it is shiny. pred = 0.03326416015625 gold = 0
+If you can feed something, then it is slimy. pred = 0.01090240478515625 gold = 0
+If you can feed something, then it is smelly. pred = 0.408447265625 gold = 0
+If you can feed something, then it is smooth. pred = 0.1466064453125 gold = 0
+If you can feed something, then it is tall. pred = 0.2080078125 gold = 1
+If you can feed something, then it lives in water. pred = 0.014617919921875 gold = 0
+If you can feed something, then it requires gasoline. pred = 0.0164642333984375 gold = 0
+If you can feed something, then it is used for eating. pred = 0.01302337646484375 gold = 0
+If you can feed something, then it is used for cooking. pred = 0.0283355712890625 gold = 0
+If you can feed something, then it is used for cleaning. pred = 0.01029205322265625 gold = 0
+If you can feed something, then it is used by children. pred = 0.06512451171875 gold = 0
+If you can feed something, then it is used for holding things. pred = 0.0316162109375 gold = 0
+If you can feed something, then it is used for killing. pred = 0.01049041748046875 gold = 0
+If you can feed something, then it is used for music. pred = 0.012237548828125 gold = 0
+If you can feed something, then it is used for transportation. pred = 0.0285491943359375 gold = 0
+If you can feed something, then it is worn for warmth. pred = 0.0101318359375 gold = 0
+If you can feed something, then it is worn on feet. pred = 0.01238250732421875 gold = 0
+If you can feed something, then it is hot. pred = 0.36474609375 gold = 0
+If you can feed something, then it is light. pred = 0.11029052734375 gold = 0
+If you can feed something, then it squishy. pred = 0.047088623046875 gold = 0
+If you can feed something, then it is unhealthy. pred = 0.0125274658203125 gold = 0
+If you can feed something, then it is wet. pred = 0.26708984375 gold = 1
+If you can feed something, then it has words on it. pred = 0.044097900390625 gold = 0
+If you can feed something, then it is man-made. pred = 0.12335205078125 gold = 0
+If you can feed something, then it is fragile. pred = 0.05340576171875 gold = 0
+If you can whistle something, then it is a tool. pred = 0.023651123046875 gold = 0
+If you can whistle something, then it is a toy. pred = 0.1588134765625 gold = 0
+If you can whistle something, then it is an animal. pred = 0.4287109375 gold = 1
+If you can whistle something, then it can fly. pred = 0.017852783203125 gold = 0
+If you can whistle something, then it can swim. pred = 0.7314453125 gold = 1
+If you can whistle something, then it comes in pairs. pred = 0.0179901123046875 gold = 0
+If you can whistle something, then it is eaten in summer. pred = 0.01490020751953125 gold = 0
+If you can whistle something, then it is found on walls. pred = 0.01116180419921875 gold = 0
+If you can whistle something, then it has a peel. pred = 0.0173797607421875 gold = 0
+If you can whistle something, then it has shelves. pred = 0.01242828369140625 gold = 0
+If you can whistle something, then it produces sound. pred = 0.85595703125 gold = 1
+If you can whistle something, then it is cold. pred = 0.282958984375 gold = 1
+If you can whistle something, then it is dangerous. pred = 0.0341796875 gold = 0
+If you can whistle something, then it is decorative. pred = 0.0192413330078125 gold = 0
+If you can whistle something, then it is edible. pred = 0.0256195068359375 gold = 1
+If you can whistle something, then it requires electricity. pred = 0.0217742919921875 gold = 0
+If you can whistle something, then it is expensive. pred = 0.046112060546875 gold = 0
+If you can whistle something, then it is fast. pred = 0.51611328125 gold = 0
+If you can whistle something, then it is fun. pred = 0.316162109375 gold = 0
+If you can whistle something, then it is hand-held. pred = 0.04534912109375 gold = 0
+If you can whistle something, then it is hard. pred = 0.0567626953125 gold = 0
+If you can whistle something, then it is heavy. pred = 0.315673828125 gold = 1
+If you can whistle something, then it is big. pred = 0.349853515625 gold = 1
+If you can whistle something, then it is loud. pred = 0.7822265625 gold = 1
+If you can whistle something, then it is sharp. pred = 0.0131683349609375 gold = 0
+If you can whistle something, then it is shiny. pred = 0.033966064453125 gold = 0
+If you can whistle something, then it is slimy. pred = 0.0110321044921875 gold = 0
+If you can whistle something, then it is smelly. pred = 0.382080078125 gold = 1
+If you can whistle something, then it is smooth. pred = 0.1317138671875 gold = 0
+If you can whistle something, then it is tall. pred = 0.2091064453125 gold = 0
+If you can whistle something, then it lives in water. pred = 0.01490020751953125 gold = 0
+If you can whistle something, then it requires gasoline. pred = 0.01406097412109375 gold = 0
+If you can whistle something, then it is used for eating. pred = 0.0125274658203125 gold = 0
+If you can whistle something, then it is used for cooking. pred = 0.0211181640625 gold = 0
+If you can whistle something, then it is used for cleaning. pred = 0.010009765625 gold = 0
+If you can whistle something, then it is used by children. pred = 0.06292724609375 gold = 0
+If you can whistle something, then it is used for holding things. pred = 0.028594970703125 gold = 0
+If you can whistle something, then it is used for killing. pred = 0.01049041748046875 gold = 0
+If you can whistle something, then it is used for music. pred = 0.01238250732421875 gold = 0
+If you can whistle something, then it is used for transportation. pred = 0.0207672119140625 gold = 0
+If you can whistle something, then it is worn for warmth. pred = 0.010009765625 gold = 0
+If you can whistle something, then it is worn on feet. pred = 0.01242828369140625 gold = 0
+If you can whistle something, then it is hot. pred = 0.364990234375 gold = 1
+If you can whistle something, then it is light. pred = 0.09588623046875 gold = 0
+If you can whistle something, then it squishy. pred = 0.046478271484375 gold = 1
+If you can whistle something, then it is unhealthy. pred = 0.0127716064453125 gold = 0
+If you can whistle something, then it is wet. pred = 0.2646484375 gold = 1
+If you can whistle something, then it has words on it. pred = 0.0416259765625 gold = 0
+If you can whistle something, then it is man-made. pred = 0.132568359375 gold = 0
+If you can whistle something, then it is fragile. pred = 0.049041748046875 gold = 0
+If you can yawn something, then it is a tool. pred = 0.0509033203125 gold = 0
+If you can yawn something, then it is a toy. pred = 0.270263671875 gold = 0
+If you can yawn something, then it is an animal. pred = 0.2237548828125 gold = 0
+If you can yawn something, then it can fly. pred = 0.021453857421875 gold = 0
+If you can yawn something, then it can swim. pred = 0.270751953125 gold = 0
+If you can yawn something, then it comes in pairs. pred = 0.018798828125 gold = 0
+If you can yawn something, then it is eaten in summer. pred = 0.012481689453125 gold = 0
+If you can yawn something, then it is found on walls. pred = 0.0129241943359375 gold = 0
+If you can yawn something, then it has a peel. pred = 0.01490020751953125 gold = 0
+If you can yawn something, then it has shelves. pred = 0.01177978515625 gold = 0
+If you can yawn something, then it produces sound. pred = 0.81787109375 gold = 1
+If you can yawn something, then it is cold. pred = 0.2447509765625 gold = 0
+If you can yawn something, then it is dangerous. pred = 0.0391845703125 gold = 1
+If you can yawn something, then it is decorative. pred = 0.0268096923828125 gold = 0
+If you can yawn something, then it is edible. pred = 0.0247039794921875 gold = 0
+If you can yawn something, then it requires electricity. pred = 0.240234375 gold = 0
+If you can yawn something, then it is expensive. pred = 0.771484375 gold = 1
+If you can yawn something, then it is fast. pred = 0.76806640625 gold = 1
+If you can yawn something, then it is fun. pred = 0.439453125 gold = 1
+If you can yawn something, then it is hand-held. pred = 0.0743408203125 gold = 0
+If you can yawn something, then it is hard. pred = 0.662109375 gold = 1
+If you can yawn something, then it is heavy. pred = 0.79638671875 gold = 1
+If you can yawn something, then it is big. pred = 0.6982421875 gold = 0
+If you can yawn something, then it is loud. pred = 0.78125 gold = 1
+If you can yawn something, then it is sharp. pred = 0.0136871337890625 gold = 0
+If you can yawn something, then it is shiny. pred = 0.255615234375 gold = 0
+If you can yawn something, then it is slimy. pred = 0.0150146484375 gold = 0
+If you can yawn something, then it is smelly. pred = 0.394775390625 gold = 1
+If you can yawn something, then it is smooth. pred = 0.282470703125 gold = 1
+If you can yawn something, then it is tall. pred = 0.272705078125 gold = 0
+If you can yawn something, then it lives in water. pred = 0.0142822265625 gold = 0
+If you can yawn something, then it requires gasoline. pred = 0.6787109375 gold = 1
+If you can yawn something, then it is used for eating. pred = 0.01467132568359375 gold = 0
+If you can yawn something, then it is used for cooking. pred = 0.0259552001953125 gold = 0
+If you can yawn something, then it is used for cleaning. pred = 0.012237548828125 gold = 0
+If you can yawn something, then it is used by children. pred = 0.1322021484375 gold = 0
+If you can yawn something, then it is used for holding things. pred = 0.32177734375 gold = 0
+If you can yawn something, then it is used for killing. pred = 0.01177978515625 gold = 0
+If you can yawn something, then it is used for music. pred = 0.013427734375 gold = 0
+If you can yawn something, then it is used for transportation. pred = 0.76611328125 gold = 1
+If you can yawn something, then it is worn for warmth. pred = 0.011688232421875 gold = 0
+If you can yawn something, then it is worn on feet. pred = 0.01306915283203125 gold = 0
+If you can yawn something, then it is hot. pred = 0.40625 gold = 1
+If you can yawn something, then it is light. pred = 0.08819580078125 gold = 0
+If you can yawn something, then it squishy. pred = 0.03912353515625 gold = 0
+If you can yawn something, then it is unhealthy. pred = 0.01374053955078125 gold = 0
+If you can yawn something, then it is wet. pred = 0.281982421875 gold = 0
+If you can yawn something, then it has words on it. pred = 0.48583984375 gold = 1
+If you can yawn something, then it is man-made. pred = 0.833984375 gold = 1
+If you can yawn something, then it is fragile. pred = 0.05242919921875 gold = 0

@@ -9,3 +9,5 @@ matplotlib
 pytorch-transformers
 tensorboardX
 tb-nightly
+ttach
+opencv-python
