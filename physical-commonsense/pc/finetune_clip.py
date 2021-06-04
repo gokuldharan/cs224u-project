@@ -51,9 +51,17 @@ from pc.data import (
 from pc import metrics
 from pc import util
 
+random.seed(224)
 
 class ClipDataset(Dataset):
-    def __init__(self, task: Task, image_preprocesser, train: bool, gan_imgs: bool=False, text_only: bool=False, dev: bool=True) -> None:
+    def __init__(self, 
+                 task: Task, 
+                 image_preprocesser: Any, 
+                 train: bool, 
+                 gan_imgs: bool=False, 
+                 random_imgs: bool=False,
+                 text_only: bool=False, 
+                 dev: bool=True) -> None:
         """
         Args:
             task: task to use
@@ -98,6 +106,9 @@ class ClipDataset(Dataset):
             else:
                 sent_idx_to_image = pkl.load(open("data/clip/sent_idx_to_image.pkl", "rb"))[task]
                 self.images = ["data/mscoco/images/{}".format(sent_idx_to_image[task_idx]) for task_idx in self.task_idxs]
+
+            if random_imgs:
+                random.shuffle(self.images)
 
         # show some samples. This is a really great idiom that huggingface does. Baking
         # little visible sanity checks like this into your code is just... *does gesture
@@ -248,6 +259,7 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--gan-imgs", dest="gan_imgs", action="store_true")
+    parser.add_argument("--rand-imgs", dest="random_imgs", action="store_true")
     parser.add_argument("--text-only", dest="text_only", action="store_true")
     parser.add_argument("--dev", dest="dev", action="store_true")
     parser.add_argument(
@@ -258,12 +270,10 @@ def main() -> None:
         required=True,
     )
     parser.add_argument("--epochs", type=int, default=5, help="How many epochs to run")
-    parser.add_argument("--early-stopping", type=int, default=5, help="num runs with less than threshold change in loss")
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
-    parser.add_argument("--optimizer", type=str, default="adamw", help="training optimizer")
-    parser.add_argument("--warmup-ratio", type=float, default="0.1", help="training optimizer")
+    parser.add_argument("--lr", type=float, default=5e-7, help="Learning rate")
+    parser.add_argument("--warmup-ratio", type=float, default=0.1, help="training optimizer")
     parser.add_argument("--batch-size", type=int, default=64, help="training batch size")
-    parser.add_argument("--activation", type=str, default="relu", help="mlp hidden layer activation")
+    parser.add_argument("--activation", type=str, default="gelu", help="mlp hidden layer activation")
     parser.add_argument("--dropout", type=float, default=0.0, help="mlp drop out")
     args = parser.parse_args()
     task = TASK_REV_MEDIUMHAND[args.task]
@@ -296,12 +306,12 @@ def main() -> None:
         model.to(device)
 
     print("Loading traning data")
-    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=dev)
+    train_dataset = ClipDataset(task, preprocess, True, gan_imgs=args.gan_imgs, random_imgs=args.random_imgs, text_only=args.text_only, dev=dev)
     train_loader = DataLoader(
         train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=8
     )
     print("Loading test data")
-    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, text_only=args.text_only, dev=dev)
+    test_dataset = ClipDataset(task, preprocess, False, gan_imgs=args.gan_imgs, random_imgs=args.random_imgs, text_only=args.text_only, dev=dev)
     test_loader = DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=8
     )
@@ -325,16 +335,7 @@ def main() -> None:
     t_total = int(((len(train_dataset) // train_batch_size) + 1) * train_epochs)
     print("Num train optimization steps: {}".format(t_total))
     loss_fn = nn.MSELoss()
-
-    if args.optimizer.lower() == "adamw":
-        optimizer = AdamW(optimizer_grouped_parameters, lr=initial_lr)
-    elif args.optimizer.lower() == "adam":
-        optimizer = torch.optim.Adam(optimizer_grouped_parameters, lr=initial_lr)
-    elif args.optimizer.lower() == "sgd":
-        optimizer = torch.optim.SGD(optimizer_grouped_parameters, lr=initial_lr)
-    else:
-        raise Exception("Please give a valid optimizer. One of adamw, adam, or sgd")
-        
+    optimizer = AdamW(optimizer_grouped_parameters, lr=initial_lr)
     scheduler = WarmupLinearSchedule(
         optimizer, warmup_steps=warmup_proportion * t_total, t_total=t_total
     )
@@ -343,11 +344,17 @@ def main() -> None:
     viz = SummaryWriter("runs/clip/{}/{}".format(args.task, run_time_str))
 
     if args.gan_imgs:
-        image_state = "gan_imgs"
+        if args.random_imgs:
+            image_state = "random_gan_imgs"
+        else:
+            image_state = "gan_imgs"
     elif args.text_only:
         image_state = "text_only"
     else:
-        image_state = "mscoco_imgs"
+        if args.random_imgs:
+            image_state = "random_mscoco_imgs"
+        else:
+            image_state = "mscoco_imgs"
 
     global_i = 0
     epoch = make_epoch_runner(task, device, model, loss_fn, optimizer, scheduler, viz, args.text_only)

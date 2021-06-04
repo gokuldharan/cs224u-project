@@ -66,6 +66,8 @@ if __name__ == "__main__":
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
 
+    print(cfg.CUDA)
+
     if cfg.SEED == -1:
         cfg.SEED = random.randint(1, 10000)
     random.seed(cfg.SEED)
@@ -89,12 +91,12 @@ if __name__ == "__main__":
     logger.info("Using output dir: %s" % output_dir)
     logger.info("Using seed {}".format(cfg.SEED))
 
+    #if torch.cuda.is_available() and cfg.CUDA:
+    #    cfg.DEVICE = torch.device('cuda:0')
+    #else:
     if True:#not (torch.cuda.is_available() and cfg.CUDA):
         cfg.CUDA = False
         cfg.DEVICE = torch.device('cpu')
-    else:
-        cfg.CUDA = True
-        cfg.DEVICE = torch.device('cuda:0')
     logger.info('USING DEVICE %s' % cfg.DEVICE)
 
     if args.data_dir != '':
