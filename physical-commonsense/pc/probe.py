@@ -57,10 +57,11 @@ if __name__ == '__main__':
 
     if args.image_name == '':
         print("No image specified, looking for horses!")
-        image_name = 'COCO_val2014_000000079229.jpg'
+        image_names = ['COCO_val2014_000000079229.jpg'] #Horse!
     else:
-        image_name = args.image_name
+        image_names = args.image_name
 
+    images = set(image_names)
     model, preprocess = ClipClassifierDebug.loadNonJitFromFolder(args.model_path, text_only=args.text)
     model.eval()
 
@@ -68,34 +69,44 @@ if __name__ == '__main__':
         model = model.cuda()
     
     device = torch.cuda.current_device()
-
+    base_data = ClipDataset(Task.Situated_AffordancesProperties, preprocess, False, gan_imgs=False, text_only=False)
+    
     if args.coco:
-        img_data = ClipDataset(Task.Situated_AffordancesProperties, preprocess, False, gan_imgs=False, text_only=False)
+        img_data = base_data
         flav = "coco"
     elif args.gan:
+        #So hacky omg
+        images1 = set()
+        for i, data in enumerate(base_data):
+            image_file = base_data.images[i]
+            img_name = image_file.split('/')[-1]
+            if img_name in images: 
+                sent_idx =  base_data.line_mapping[data["label"]]
+                images1.add(str(sent_idx) + ".png")
+        images = images1
         img_data = ClipDataset(Task.Situated_AffordancesProperties, preprocess, False, gan_imgs=True, text_only=False)
         flav = "gan"
     else:
-        img_data = ClipDataset(Task.Situated_AffordancesProperties, preprocess, False, gan_imgs=True, text_only=False)
+        img_data = base_data
         flav = "text"
 
     #sent_idx_to_image = pkl.load(open("data/clip/sent_idx_to_image.pkl", "rb"))
 
     with open("data/sentences/sentences.txt", "r") as f:
-            all_sentences = [line.strip() for line in f.readlines()]
+        all_sentences = [line.strip() for line in f.readlines()]
 
     outF = open(flav + "_AP_probe.txt", "w")
-    testimgs = open("test_imgs.txt", "w")
-    seen_imgs = set()
+    #testimgs = open("test_imgs.txt", "w")
+    #seen_imgs = set()
     seen_sents = set()
-    cnt, total = 0, 0
+    
     for i, data in enumerate(img_data):
         image_file = img_data.images[i]
         img_name = image_file.split('/')[-1]
-        if img_name not in seen_imgs:
-            seen_imgs.add(img_name)
-            testimgs.write(img_name + "\n")
-        if img_name == image_name: #Horse!
+        #if img_name not in seen_imgs:
+        #    seen_imgs.add(img_name)
+        #    testimgs.write(img_name + "\n")
+        if img_name in images: 
             sent_idx =  img_data.line_mapping[data["label"]]
             if sent_idx not in seen_sents:
                 seen_sents.add(sent_idx)
@@ -103,13 +114,9 @@ if __name__ == '__main__':
                 input_image = torch.unsqueeze(data["input_image"],0).to(device)
                 output = model([input_ids, input_image]).data.tolist()[0][0]
                 gold = data["y"][0]
-                if round(output) == gold:
-                    cnt += 1
                 line = all_sentences[sent_idx] + " pred = " + str(output) + " gold = " + str(gold) + "\n"
-                total += 1
                 outF.write(line)
-    print("Accuracy = " + str(cnt / total))
-    testimgs.close()
+    #testimgs.close()
     outF.close()
     
 
